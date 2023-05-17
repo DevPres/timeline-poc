@@ -1,0 +1,57 @@
+
+.timeline-container {
+  width: 100%;
+  margin: auto;
+  position: relative;
+}
+
+.timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin: auto;
+  height: 30px;
+  margin-right: 100%;
+  transition: margin-right 2s ease-out;
+  will-change: margin-right;
+}
+
+.timeline.visible {
+  opacity: 1;
+}
+
+.timeline.hidden {
+  opacity: 0;
+}
+
+.timeline.open {
+  margin-right: 0;
+  background-color: red;
+}
+
+.timeline.closed {
+  margin-right: 90%;
+  background-color: yellow;
+
+}
+
+.circle {
+  height: 120px;
+  width: 120px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+  transition: transform .2s ease-in-out, width .2s ease-in-out, height .2s ease-in-out;
+  will-change: transform, width, height;
+}
+
+.timeline.closed .circle:not(.selected) {
+  height: 0px;
+  width: 0px
+}
+
+.circle:hover {
+  transform: scale(1.2)
+}
+
+

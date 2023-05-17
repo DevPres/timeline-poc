@@ -1,9 +1,8 @@
-import { component$, useSignal, useTask$ } from '@builder.io/qwik';
 import type { DocumentHead  } from '@builder.io/qwik-city';
 import { routeLoader$ } from '@builder.io/qwik-city';
-import Timeline from '~/components/timeline/timeline';
-import { isServer } from '@builder.io/qwik/build';
+import HorizontalTimeline from '~/components/horizontal-timeline/horizontal-timeline';
 import styles from './index.module.css';
+import { component$, createContextId, useContextProvider, useStore } from '@builder.io/qwik';
 
 export const ages=
 [
@@ -13,29 +12,40 @@ export const ages=
   '2011'
 ]
 
+export type HorizontalTimelineState = 'closed' | 'open'
+
 export const useAgesLoader = routeLoader$(() => {
   return ages;
 });
 
 
+export const TIMELINECONTEXT = createContextId<
+  {
+    ages: string[];
+    ageSelected:string | null; 
+    state: HorizontalTimelineState;
+    hidden: boolean;
+  }
+>('timeline');
 
-
+ 
 export default component$(() => {
-    const ages = useAgesLoader();
-    const ageSelected = useSignal<string | null>(null)
 
-    useTask$(({ track }) => {
-      track(() => ageSelected.value);
-      if (isServer || !ageSelected.value) {
-        return;
+      const timelineContext = useStore(
+      {
+        ages: useAgesLoader().value,
+        ageSelected: null,
+        state: 'closed' as HorizontalTimelineState,
+        hidden: true
       }
-      debugger;
-    });
+    );
+
+    useContextProvider(TIMELINECONTEXT, timelineContext);
 
     return (
         <>
           <div class={styles.container}>
-            <Timeline ageChangeHandler$={(age) => {ageSelected.value = age} }      ages={ages.value}/>                 
+            <HorizontalTimeline />                 
           </div>
         </>
     );
