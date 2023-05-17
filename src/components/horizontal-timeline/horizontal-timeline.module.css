@@ -1,6 +1,8 @@
 
 .timeline-container {
-  width: 100%;
+  min-width: 100%;
+  height: calc(var(--circle-diameter) + 100px);
+  display: flex;
   margin: auto;
   position: relative;
 }
@@ -12,8 +14,9 @@
   margin: auto;
   height: 30px;
   margin-right: 100%;
-  transition: margin-right 2s ease-out;
-  will-change: margin-right;
+  width: 0%;
+  transition: margin-right 2s ease-out, width 2s ease-out;
+  will-change: margin-right, width;
 }
 
 .timeline.visible {
@@ -25,19 +28,20 @@
 }
 
 .timeline.open {
+  width: 100%;
   margin-right: 0;
   background-color: red;
 }
 
 .timeline.closed {
-  margin-right: 90%;
+  width: 0%;
+  margin-right: 100%;
   background-color: yellow;
-
 }
 
 .circle {
-  height: 120px;
-  width: 120px;
+  height: var(--circle-diameter);
+  width: var(--circle-diameter);
   background-color: #bbb;
   border-radius: 50%;
   display: inline-block;
@@ -51,7 +55,8 @@
 }
 
 .circle:hover {
-  transform: scale(1.2)
+  transform: scale(1.2);
+  cursor: pointer;
 }
 
 
