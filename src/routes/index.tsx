@@ -5,32 +5,14 @@ import styles from './index.module.css';
 import { component$, createContextId, useContextProvider, useSignal, useStore, useTask$, useVisibleTask$  } from '@builder.io/qwik';
 import { isServer } from '@builder.io/qwik/build'
 
-export const years=
-[
-  '1',
-  '2',
-  '3',
-  '4',
-  '5',
-  '6',
-  '7',
-  '8',
-  '9',
-  '10',
-  '11',
-  '12',
-  '13',
-  '14',
-  '15',
-  '16'
-
-
-
-]
 
 export type HorizontalTimelineState = 'closed' | 'open'
 
 export const useAgesLoader = routeLoader$(() => {
+  const years = [];
+  for( let i = 1; i <= 200; i++) {
+    years.push(String(i))
+  }
   return years;
 });
 
@@ -41,6 +23,8 @@ export const TIMELINECONTEXT = createContextId<
     yearSelected:string | null; 
     state: HorizontalTimelineState;
     hidden: boolean;
+    scrollVelocity: number;
+    scrollStep: number;
   }
 >('timeline');
 
@@ -52,7 +36,9 @@ export default component$(() => {
         years: useAgesLoader().value,
         yearSelected: null,
         state: 'closed' as HorizontalTimelineState,
-        hidden: true
+        hidden: true,
+        scrollVelocity: 0.5,
+        scrollStep: 6,
       }
     );
 
@@ -79,7 +65,8 @@ export default component$(() => {
 
         requestAnimationFrame(() => {
           if(state == 'closed' && containerRef.value) {
-            scrollTo.value = 0;
+            scrollingDirection.value = 'left' 
+            containerRef.value.scrollLeft = 0;
           }
         })
       }
@@ -90,7 +77,6 @@ export default component$(() => {
       if(isServer) {
         return;
       }
-      console.log('scrollTo',scrollTo.value)
       if(containerRef.value) {
         scroll.value = true;
       }
@@ -100,45 +86,49 @@ export default component$(() => {
     useVisibleTask$(({ track, cleanup }) => {
       const scrolling = track(() => scroll.value)
       const  id = setInterval(() => {
-        console.log('scrolling', scrolling);
-        console.log('direction', scrollingDirection.value);
+        //console.log('scrolling', scrolling);
+        //console.log('direction', scrollingDirection.value);
+        //console.log('scroll pos', scrollBarPos.value);
+        //console.log('scroll to', scrollTo.value);
         if(!scrolling) clearInterval(id);
         if(containerRef.value) {
+
+          if(scrollBarPos.value == scrollTo.value) {
+            scroll.value = false;
+            clearInterval(id)
+          }
+          if(scrollingDirection.value == 'right' && (scrollTo.value < scrollBarPos.value || scrollBarPos.value == maxScrollLeft.value)) {
+            scroll.value = false
+            clearInterval(id)
+          }
+          if(scrollingDirection.value == 'left' && (scrollTo.value > scrollBarPos.value || scrollBarPos.value == 0 )) {
+            scroll.value = false
+            clearInterval(id)
+          }
+         // console.log('passo')
+         // console.log(' scroll direction' ,scrollingDirection.value)
+         // console.log(' scroll left' ,scrollLeft.value)
+         // console.log(' scroll max', maxScrollLeft.value)
+         // console.log(' scroll to' ,scrollTo.value)
+
+
           if(scrollingDirection.value == 'left') {
-            containerRef.value.scrollLeft = containerRef.value.scrollLeft - 2 
+            requestAnimationFrame(() => {
+              containerRef.value!.scrollLeft = containerRef.value!.scrollLeft - timelineContext.scrollStep 
+            })
           } else {
-            containerRef.value.scrollLeft = containerRef.value.scrollLeft + 2 
+            requestAnimationFrame(() => {
+              containerRef.value!.scrollLeft = containerRef.value!.scrollLeft + timelineContext.scrollStep 
+            })
           }
 
           scrollBarPos.value = containerRef.value.scrollLeft
 
         }
-      }, 1)
+      }, timelineContext.scrollVelocity)
       cleanup(() => clearInterval(id))
-    })
-
-    useTask$(({ track }) => {
-      const pos = track(() => scrollBarPos.value);
-      if(isServer) {
-        return;
-      }
-      console.log('scrollbaposr', pos);
-      console.log('scrollto', scrollTo.value)
-        if(pos == scrollTo.value || pos == 0 || pos > maxScrollLeft.value) {
-          scroll.value = false;
-        }
-        if(scrollingDirection.value == 'right' && scrollTo.value < pos) {
-          scroll.value = false
-        }
-        if(scrollingDirection.value == 'left' && scrollTo.value > pos) {
-          scroll.value = false
-        }
-
-    })
-
-
-
-    
+    }) 
+ 
     return (
         <>
           <div 
@@ -162,6 +152,11 @@ export default component$(() => {
                 scrollTo.value = scrollLeft.value - dx;
               }
             }}
+            onWheel$={(ev, currentTarget) => {
+              scrollingDirection.value = ev.deltaY < 0 ? 'left' : 'right';
+              scrollLeft.value = currentTarget.scrollLeft
+              scrollTo.value = scrollLeft.value + ev.deltaY;
+            }}  
             class={styles.container}>
               <HorizontalTimeline />                 
           </div>

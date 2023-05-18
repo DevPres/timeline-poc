@@ -15,8 +15,10 @@
   height: 30px;
   margin-right: 100%;
   width: 0%;
-  transition: margin-right 2s ease-out, width 2s ease-out;
+  transition: margin-right 3s ease-out, width 3s ease-out;
   will-change: margin-right, width;
+  background-color: orange;
+
 }
 
 .timeline.visible {
@@ -24,35 +26,42 @@
 }
 
 .timeline.hidden {
-  opacity: 0;
+  background-color: transparent;
 }
 
 .timeline.open {
   width: 100%;
   margin-right: 0;
-  background-color: red;
 }
 
 .timeline.closed {
-  width: 0%;
-  margin-right: 100%;
-  background-color: yellow;
+  width: 160px;
 }
 
 .circle {
   height: var(--circle-diameter);
   width: var(--circle-diameter);
-  background-color: #bbb;
+  background-color: orange;
   border-radius: 50%;
+  position: relative;
   display: inline-block;
   transition: transform .2s ease-in-out, width .2s ease-in-out, height .2s ease-in-out;
-  will-change: transform, width, height;
+  will-change: transform, width, height; 
 }
+
+.circle.selected {
+}
+
 
 .timeline.closed .circle:not(.selected) {
   height: 0px;
   width: 0px
 }
+
+.timeline.closed .circle:not(.selected) span {
+  display: none
+}
+
 
 .circle:hover {
   transform: scale(1.2);
