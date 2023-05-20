@@ -9,13 +9,13 @@ export default component$(() => {
     return (
         <>
         <button
-        onclick$={async () => {
-          // spa navigate to /dashboard
-          await nav('/timeline');
-        }}
-      >
-        go to timeline 
-      </button>
+          onclick$={async () => {
+            // spa navigate to /dashboard
+            await nav('/timeline/years');
+          }}
+        >
+          go to timeline 
+        </button>
         </>
     );
 });

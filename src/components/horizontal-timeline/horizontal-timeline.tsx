@@ -1,7 +1,7 @@
 import { component$, useTask$,  useSignal, type PropFunction, useContext, useVisibleTask$, $, QwikMouseEvent } from '@builder.io/qwik';
 import styles from "./horizontal-timeline.module.css";
 import { isServer } from '@builder.io/qwik/build'
-import { TIMELINECONTEXT } from '~/routes/timeline';
+import { TIMELINECONTEXT } from '~/routes/timeline/[yearSelected]';
 
 export default component$(() => {
     

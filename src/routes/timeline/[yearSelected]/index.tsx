@@ -1,9 +1,10 @@
-import type { DocumentHead  } from '@builder.io/qwik-city';
+import { DocumentHead, useLocation, useNavigate  } from '@builder.io/qwik-city';
 import { routeLoader$ } from '@builder.io/qwik-city';
 import HorizontalTimeline from '~/components/horizontal-timeline/horizontal-timeline';
 import styles from './index.module.css';
 import { NoSerialize, component$, createContextId, noSerialize, untrack, useContextProvider, useSignal, useStore, useTask$, useVisibleTask$  } from '@builder.io/qwik';
 import { isServer } from '@builder.io/qwik/build'
+import { time } from 'console';
 
 
 export type HorizontalTimelineState = 'closed' | 'open' | 'wait'
@@ -25,8 +26,6 @@ export interface TimelineContextInterface  {
   scrollStep: number;
   circleDiameter: number;
   timelineWidth: string;
-  observer: NoSerialize<IntersectionObserver> | null;
-  observerTrigger: boolean;
 }
 
 
@@ -58,13 +57,13 @@ export default component$(() => {
         scrollStep: 6,
         circleDiameter: 120,
         timelineWidth: '0px',
-        observer: null,
-        observerTrigger: false
       }
     );
 
     useContextProvider(TIMELINECONTEXT, timelineContext);
-    
+
+    const loc = useLocation();
+    const nav = useNavigate();    
     const mouseDown = useSignal(false);
     const posX = useSignal<number>(0);
     const containerRef = useSignal<Element>();
@@ -75,39 +74,25 @@ export default component$(() => {
     const scrollBarPos = useSignal<number>(0);
     const maxScrollLeft = useSignal<number>(0);
 
-    useVisibleTask$(({ track }) => {
-      const state = track(() => timelineContext.state);
-      if(containerRef.value) {
-        
-        maxScrollLeft.value = containerRef.value.scrollWidth - containerRef.value.clientWidth;
-
-      const options = {
-        root: containerRef.value,
-        rootMargin: "-1px",
-        threshold: buildThresholds(),
+    useTask$(( {track} ) => {
+      const params = track(() => loc.params)
+      console.log('passo')
+      if(params.yearSelected == 'years') {
+        timelineContext.hidden = false;
+        timelineContext.yearSelected = null;
       }
-
-      const observer = new IntersectionObserver((entr) => {
-
-         console.log(entr) 
-          if(entr[0].intersectionRatio < 1) {
-          } else {
-            
-          }
-      }, options);
-      timelineContext.observer = noSerialize(observer);
-
-
-        //requestAnimationFrame(() => {
-        //  if(state == 'closed' && containerRef.value) {
-        //    scrollingDirection.value = 'left' 
-        //    scrollTo.value = 0;
-        //  }
-        //})
-      }
+      
     })
+    
+    useTask$(({ track }) => {
+      const hidden = track(() => timelineContext.hidden);
+      if( !isServer && hidden && timelineContext.yearSelected) {
+        nav(`/timeline/${timelineContext.yearSelected}`)
+      }
 
-    useTask$(({ track, cleanup}) => {
+    })
+   
+    useTask$(({ track, cleanup }) => {
       const posToScroll = track(() => scrollTo.value);
       if(isServer) {
         return;
@@ -157,37 +142,39 @@ export default component$(() => {
     }) 
  
    return (
-        <>
+      <>
+        { loc.params.yearSelected == 'years' &&
           <div 
-            ref={containerRef}
-            onMouseDown$={(ev, currentTarget) => {
-              posX.value = ev.clientX;
-              scrollLeft.value = currentTarget.scrollLeft
-              currentTarget.style.cursor = 'grabbing';
-              currentTarget.style.userSelect = 'none';
-              mouseDown.value = true;
-            }} 
-            onMouseUp$={(ev, currentTarget) => {
-              mouseDown.value = false;
-              currentTarget.style.cursor = 'grab';
-              currentTarget.style.removeProperty('user-select');
-            }}
-            onMouseMove$={(ev, currentTarget) => {
-              if(mouseDown.value) {
-                const dx = ev.clientX - posX.value;
-                scrollingDirection.value = dx > 0 ? 'left' : 'right'  ;
-                scrollTo.value = scrollLeft.value - dx;
-              }
-            }}
-            onWheel$={(ev, currentTarget) => {
+          ref={containerRef}
+          onMouseDown$={(ev, currentTarget) => {
+            posX.value = ev.clientX;
+            scrollLeft.value = currentTarget.scrollLeft
+            currentTarget.style.cursor = 'grabbing';
+            currentTarget.style.userSelect = 'none';
+            mouseDown.value = true;
+          }} 
+          onMouseUp$={(ev, currentTarget) => {
+            mouseDown.value = false;
+            currentTarget.style.cursor = 'grab';
+            currentTarget.style.removeProperty('user-select');
+          }}
+          onMouseMove$={(ev, currentTarget) => {
+            if(mouseDown.value) {
+              const dx = ev.clientX - posX.value;
+              scrollingDirection.value = dx > 0 ? 'left' : 'right'  ;
+              scrollTo.value = scrollLeft.value - dx;
+            }
+          }}
+          onWheel$={(ev, currentTarget) => {
               scrollingDirection.value = ev.deltaY < 0 ? 'left' : 'right';
               scrollLeft.value = currentTarget.scrollLeft
               scrollTo.value = scrollLeft.value + ev.deltaY;
-            }}  
-            class={[styles.container, {[styles['timeline-closed']]: timelineContext.state == 'closed' }]}>
-              <HorizontalTimeline />                 
+          }}  
+          class={[styles.container, {[styles['timeline-closed']]: timelineContext.state == 'closed' }]}>
+            <HorizontalTimeline />                 
           </div>
-        </>
+        || <div>{ JSON.stringify(loc.params) }</div>}
+      </>
     );
 });
  

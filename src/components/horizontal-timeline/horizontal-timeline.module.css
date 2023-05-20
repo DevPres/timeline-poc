@@ -79,7 +79,7 @@
 }
 
 
-.circle:hover {
+.circle:hover:not(.selected):not(.unselected) {
   transform: scale(1.2);
   cursor: pointer;
 }
