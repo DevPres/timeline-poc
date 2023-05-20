@@ -11,31 +11,31 @@
   display: flex;
   align-items: center;
   justify-content: space-around;
-  margin: auto;
   height: 30px;
-  margin-right: 100%;
+  margin: auto 100% auto 0;
   width: 0%;
-  transition: margin-right 3s ease-out, width 3s ease-out;
+  transition:  width 3s cubic-bezier(0.5,0,0,0);
   will-change: margin-right, width;
   background-color: orange;
 
 }
 
 .timeline.visible {
-  opacity: 1;
 }
 
 .timeline.hidden {
-  background-color: transparent;
+  
 }
 
 .timeline.open {
-  width: 100%;
-  margin-right: 0;
+  width:100%;
+  margin-right: 0;  
 }
 
+
 .timeline.closed {
-  width: 160px;
+  transition:  width 3s cubic-bezier(0,0,0,0.5);
+  width: 0%;
 }
 
 .circle {
@@ -45,17 +45,33 @@
   border-radius: 50%;
   position: relative;
   display: inline-block;
-  transition: transform .2s ease-in-out, width .2s ease-in-out, height .2s ease-in-out;
-  will-change: transform, width, height; 
+  opacity: 1;
+  transition: transform .2s ease-in-out, width 0.5s ease-in, height .5s ease-in, opacity .5s easi-in;
+  will-change: transform, width, height, opacity; 
+  animation: opening;
+  animation-timing-function: cubic-bezier(1,0,0,0);
+  animation-duration: 4.5s;
+  
+}
+
+@keyframes opening {
+  from    {
+          transform: scale(0);        
+        }
+  to  {
+          transform:scale(1);
+        }
+
 }
 
 .circle.selected {
+  transition: transform 2s ease-in-out;
+  transform: scale(0); 
 }
 
-
-.timeline.closed .circle:not(.selected) {
-  height: 0px;
-  width: 0px
+.circle.unselected {
+  transition: transform 0.7s ease-in;
+  transform: scale(0); 
 }
 
 .timeline.closed .circle:not(.selected) span {

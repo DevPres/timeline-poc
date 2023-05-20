@@ -10,7 +10,10 @@
   transition-property: scroll;
   transition-duration: 1s;
   transition-timing-function: ease-out;
-} 
+}
+
+.container.timeline-closed {
+}
 
 .container::-webkit-scrollbar {
   display: none;

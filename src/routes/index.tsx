@@ -2,11 +2,11 @@ import type { DocumentHead  } from '@builder.io/qwik-city';
 import { routeLoader$ } from '@builder.io/qwik-city';
 import HorizontalTimeline from '~/components/horizontal-timeline/horizontal-timeline';
 import styles from './index.module.css';
-import { component$, createContextId, useContextProvider, useSignal, useStore, useTask$, useVisibleTask$  } from '@builder.io/qwik';
+import { NoSerialize, component$, createContextId, noSerialize, untrack, useContextProvider, useSignal, useStore, useTask$, useVisibleTask$  } from '@builder.io/qwik';
 import { isServer } from '@builder.io/qwik/build'
 
 
-export type HorizontalTimelineState = 'closed' | 'open'
+export type HorizontalTimelineState = 'closed' | 'open' | 'wait'
 
 export const useAgesLoader = routeLoader$(() => {
   const years = [];
@@ -16,29 +16,50 @@ export const useAgesLoader = routeLoader$(() => {
   return years;
 });
 
+export interface TimelineContextInterface  {
+  years: string[];
+  yearSelected:string | null; 
+  state: HorizontalTimelineState;
+  hidden: boolean;
+  scrollInterval: number;
+  scrollStep: number;
+  circleDiameter: number;
+  timelineWidth: string;
+  observer: NoSerialize<IntersectionObserver> | null;
+  observerTrigger: boolean;
+}
 
-export const TIMELINECONTEXT = createContextId<
-  {
-    years: string[];
-    yearSelected:string | null; 
-    state: HorizontalTimelineState;
-    hidden: boolean;
-    scrollVelocity: number;
-    scrollStep: number;
+
+export const TIMELINECONTEXT = createContextId<TimelineContextInterface>('timeline');
+
+export const buildThresholds = function () {
+  let thresholds = [];
+  let numSteps = 20;
+
+  for (let i = 1.0; i <= numSteps; i++) {
+    let ratio = i / numSteps;
+    thresholds.push(ratio);
   }
->('timeline');
+
+  thresholds.push(0);
+  return thresholds;
+}
 
  
 export default component$(() => {
 
-    const timelineContext = useStore(
+    const timelineContext = useStore<TimelineContextInterface>(
       {
         years: useAgesLoader().value,
         yearSelected: null,
         state: 'closed' as HorizontalTimelineState,
         hidden: true,
-        scrollVelocity: 0.5,
+        scrollInterval: 0.5,
         scrollStep: 6,
+        circleDiameter: 120,
+        timelineWidth: '0px',
+        observer: null,
+        observerTrigger: false
       }
     );
 
@@ -54,21 +75,35 @@ export default component$(() => {
     const scrollBarPos = useSignal<number>(0);
     const maxScrollLeft = useSignal<number>(0);
 
-
-
-
     useVisibleTask$(({ track }) => {
       const state = track(() => timelineContext.state);
       if(containerRef.value) {
         
-        maxScrollLeft.value = containerRef.value.scrollWidth - containerRef.value.clientWidth
+        maxScrollLeft.value = containerRef.value.scrollWidth - containerRef.value.clientWidth;
 
-        requestAnimationFrame(() => {
-          if(state == 'closed' && containerRef.value) {
-            scrollingDirection.value = 'left' 
-            containerRef.value.scrollLeft = 0;
+      const options = {
+        root: containerRef.value,
+        rootMargin: "-1px",
+        threshold: buildThresholds(),
+      }
+
+      const observer = new IntersectionObserver((entr) => {
+
+         console.log(entr) 
+          if(entr[0].intersectionRatio < 1) {
+          } else {
+            
           }
-        })
+      }, options);
+      timelineContext.observer = noSerialize(observer);
+
+
+        //requestAnimationFrame(() => {
+        //  if(state == 'closed' && containerRef.value) {
+        //    scrollingDirection.value = 'left' 
+        //    scrollTo.value = 0;
+        //  }
+        //})
       }
     })
 
@@ -86,10 +121,6 @@ export default component$(() => {
     useVisibleTask$(({ track, cleanup }) => {
       const scrolling = track(() => scroll.value)
       const  id = setInterval(() => {
-        //console.log('scrolling', scrolling);
-        //console.log('direction', scrollingDirection.value);
-        //console.log('scroll pos', scrollBarPos.value);
-        //console.log('scroll to', scrollTo.value);
         if(!scrolling) clearInterval(id);
         if(containerRef.value) {
 
@@ -97,22 +128,18 @@ export default component$(() => {
             scroll.value = false;
             clearInterval(id)
           }
+
           if(scrollingDirection.value == 'right' && (scrollTo.value < scrollBarPos.value || scrollBarPos.value == maxScrollLeft.value)) {
             scroll.value = false
             clearInterval(id)
           }
+
           if(scrollingDirection.value == 'left' && (scrollTo.value > scrollBarPos.value || scrollBarPos.value == 0 )) {
             scroll.value = false
             clearInterval(id)
           }
-         // console.log('passo')
-         // console.log(' scroll direction' ,scrollingDirection.value)
-         // console.log(' scroll left' ,scrollLeft.value)
-         // console.log(' scroll max', maxScrollLeft.value)
-         // console.log(' scroll to' ,scrollTo.value)
 
-
-          if(scrollingDirection.value == 'left') {
+          if(scrollingDirection.value == 'left' && scroll.value) {
             requestAnimationFrame(() => {
               containerRef.value!.scrollLeft = containerRef.value!.scrollLeft - timelineContext.scrollStep 
             })
@@ -125,7 +152,7 @@ export default component$(() => {
           scrollBarPos.value = containerRef.value.scrollLeft
 
         }
-      }, timelineContext.scrollVelocity)
+      }, timelineContext.scrollInterval)
       cleanup(() => clearInterval(id))
     }) 
  
@@ -157,7 +184,7 @@ export default component$(() => {
               scrollLeft.value = currentTarget.scrollLeft
               scrollTo.value = scrollLeft.value + ev.deltaY;
             }}  
-            class={styles.container}>
+            class={[styles.container, {[styles['timeline-closed']]: timelineContext.state == 'closed' }]}>
               <HorizontalTimeline />                 
           </div>
         </>

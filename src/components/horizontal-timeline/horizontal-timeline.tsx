@@ -7,64 +7,77 @@ export default component$(() => {
     
     const timelineContext= useContext(TIMELINECONTEXT);
     const timelineStateClass = useSignal<string | null>(null);
-    const circleDiameter = 120;
     const containerRef = useSignal<Element>();
-
-
+    
     useTask$(({ track }) => {
-      const yearSelected = track(() => timelineContext.yearSelected)
-      
-      timelineContext.state = !yearSelected ? 'open' : 'closed'
+      timelineContext.state = 'open';
     })
 
-    useTask$(({ track }) => {
-      const container = track(() => containerRef.value)
-      if(isServer) {
-        return;
+
+    useVisibleTask$(({ track, cleanup  }) => {
+      const yearSelected = track(() => timelineContext.yearSelected);
+      let id: NodeJS.Timer;
+      if(yearSelected) {
+        const id = setTimeout(() => {
+            timelineContext.state = 'closed';
+        }, 2000)
       }
-      console.log('innerwidth', container?.scrollWidth)
+      
+      cleanup(() => clearTimeout(id))
     })
-
 
     useVisibleTask$(({ track }) => {
       const timelineState = track(() => timelineContext.state);
+      let id: NodeJS.Timer;
       requestAnimationFrame(() => {
         switch(timelineState) {
           case 'closed':
             timelineStateClass.value = styles.closed;
+            timelineContext.timelineWidth = '100%';
             break;
           case 'open':
             timelineStateClass.value = styles.open;
+            timelineContext.timelineWidth = `${(timelineContext.years.length + 1 ) * ( timelineContext.circleDiameter + 100 )}px`;
             break;
-        }  
+        } 
         if(timelineState == 'open') {
           timelineContext.hidden = false;
         } else {
-          setTimeout(() => {
-            timelineContext.hidden = true;
-          }, 3000)
+          id = setTimeout(() => {
+          timelineContext.hidden = true
+          }, 2800)
         }
-      })
+       })
     })
+
     
     return (
         <>
           <span>{timelineContext.yearSelected}</span>
+          {
+
+          }
           <div 
             ref={containerRef}
             style={{
-              '--circle-diameter': `${circleDiameter}px`,  
-              'width': `${( timelineContext.years.length + 1 ) * ( circleDiameter + 100 )}px` 
+              '--circle-diameter': `${timelineContext.circleDiameter}px`,
+              'width': timelineContext.timelineWidth,               
             }} 
             class={styles['timeline-container']}
           >
-            <div class={[
+            <div 
+            class={[
               styles.timeline,
               timelineStateClass.value,
               timelineContext.hidden ? styles.hidden : styles.visible
             ]}>
             {timelineContext.years.map((year) => (
-              <Circle year={year} selected={ year == timelineContext.yearSelected} clickHandler$={() =>  {timelineContext.yearSelected = year; } }/>
+              <div
+                class={styles['circle-wrapper']}
+                key={year}
+              >
+                <Circle year={year} yearSelected={ timelineContext.yearSelected } clickHandler$={() =>  {timelineContext.yearSelected = year; } }/>
+              </div>
             ))}    
             </div>
           </div>
@@ -74,23 +87,21 @@ export default component$(() => {
 
 interface CircleProps {
   year: string;
-  selected: boolean
+  yearSelected: string | null;
   clickHandler$: PropFunction<() => void>
 }
 
 
-const Circle = component$<CircleProps>(({year, selected, clickHandler$}) => {
-    
-        
+const Circle = component$<CircleProps>(({year, yearSelected, clickHandler$}) => {
+
     return (
       <>
-        <div 
+        <div
           onClick$={[
-            $((ev: QwikMouseEvent, currentTarget: HTMLElement) => {console.log(currentTarget.getBoundingClientRect())}),
             clickHandler$, 
             $((ev: QwikMouseEvent) => ev.stopPropagation())
           ]}  
-          class={[ styles.circle, {[styles.selected]: selected} ]}
+          class={[ styles.circle, {[styles.selected]: yearSelected && year == yearSelected || false, [styles.unselected]: yearSelected && year !== yearSelected || false  } ]}
         >
           <span>{year}</span>
         </div>
