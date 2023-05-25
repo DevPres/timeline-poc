@@ -1,0 +1,87 @@
+
+.timeline-container {
+  min-width: 100%;
+  height: calc(var(--circle-diameter) + 100px);
+  display: flex;
+  margin: auto;
+  position: relative;
+}
+
+.timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 30px;
+  margin: auto 100% auto 0;
+  width: 0%;
+  transition:  width 3s cubic-bezier(0.5,0,0,0);
+  will-change: margin-right, width;
+  background-color: orange;
+
+}
+
+.timeline.visible {
+}
+
+.timeline.hidden {
+  
+}
+
+.timeline.open {
+  width:100%;
+  margin-right: 0;  
+}
+
+
+.timeline.closed {
+  transition:  width 3s cubic-bezier(0,0,0,0.5);
+  width: 0%;
+}
+
+.circle {
+  height: var(--circle-diameter);
+  width: var(--circle-diameter);
+  background-color: orange;
+  border-radius: 50%;
+  position: relative;
+  display: inline-block;
+  opacity: 1;
+  transition: transform .2s ease-in-out, width 0.5s ease-in, height .5s ease-in, opacity .5s easi-in;
+  will-change: transform, width, height, opacity; 
+  animation: opening;
+  animation-timing-function: cubic-bezier(1,0,0,0);
+  animation-duration: 4.5s;
+  
+}
+
+@keyframes opening {
+  from    {
+          transform: scale(0);        
+        }
+  to  {
+          transform:scale(1);
+        }
+
+}
+
+.circle.selected {
+  transition: transform 2s ease-in-out;
+  transform: scale(0); 
+}
+
+.circle.unselected {
+  transition: transform 0.7s ease-in;
+  transform: scale(0); 
+}
+
+.timeline.closed .circle:not(.selected) span {
+  display: none
+}
+
+
+.circle:hover:not(.selected):not(.unselected) {
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+
